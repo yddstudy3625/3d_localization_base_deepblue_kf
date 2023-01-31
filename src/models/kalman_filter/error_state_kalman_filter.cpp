@@ -383,9 +383,9 @@ void ErrorStateKalmanFilter::UpdateOrientation(
   // direction:
   Eigen::Vector3d angular_delta_dir = angular_delta.normalized();
 
-  // build delta q:
-  double angular_delta_cos = cos(angular_delta_mag / 2.0);
-  double angular_delta_sin = sin(angular_delta_mag / 2.0);
+  // build delta q: // use 罗德里戈公式 使用角轴的方式计算 等同的四元素乘法，四元素乘法等同于按照对应角轴的旋转
+  double angular_delta_cos = cos(angular_delta_mag / 2.0);  // theta/2
+  double angular_delta_sin = sin(angular_delta_mag / 2.0);  // theta/2
   Eigen::Quaterniond dq(angular_delta_cos,
                         angular_delta_sin * angular_delta_dir.x(),
                         angular_delta_sin * angular_delta_dir.y(),
@@ -463,18 +463,18 @@ void ErrorStateKalmanFilter::UpdateOdomEstimation(
   // TODO: this is one possible solution to previous chapter, IMU Navigation,
   // assignment
   //
-  // get deltas:
-    Eigen::Vector3d deltas = Eigen::Vector3d::Zero();
+  // get angular_delta:
+    Eigen::Vector3d angular_delta = Eigen::Vector3d::Zero();
     size_t index_current = 1;
     size_t index_prev = 0;
-    if(!GetAngularDelta(index_current,index_prev,deltas,angular_vel_mid)) {
+    if(!GetAngularDelta(index_current,index_prev,angular_delta,angular_vel_mid)) {
         // return false;
     }
 
   // update orientation:
     Eigen::Matrix3d R_curr = Eigen::Matrix3d::Identity();
     Eigen::Matrix3d R_prev = Eigen::Matrix3d::Identity();
-    UpdateOrientation(deltas, R_curr, R_prev);
+    UpdateOrientation(angular_delta, R_curr, R_prev);
 
   // get velocity delta:
     double delta_t = 0;
@@ -548,8 +548,8 @@ void ErrorStateKalmanFilter::UpdateErrorEstimation(
   B_.block<3,3>(kIndexErrorGyro,kIndexNoiseBiasGyro) = B_.block<3,3>(kIndexErrorGyro,kIndexNoiseBiasGyro) * sqrt(T);
 
   // TODO: perform Kalman prediction
-  MatrixF F = MatrixF::Identity() + F_1st;
-  X_ = F * X_;                                        
+  MatrixF F = MatrixF::Identity() + F_1st; 
+  X_ = F * X_;                             // why no add B(k-1)w(k)            
   P_ = F * P_ * F.transpose() + B_ * Q_ * B_.transpose(); 
 }
 

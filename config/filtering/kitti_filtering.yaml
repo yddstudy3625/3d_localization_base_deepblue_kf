@@ -35,7 +35,7 @@ voxel_filter:
     local_map:
         leaf_size: [0.5, 0.5, 0.5]
     current_scan:
-        leaf_size: [1.5, 1.5, 1.5]
+        leaf_size: [1.0, 1.0, 1.0]
 ## b. scan context:
 scan_context:
     # a. ROI definition:
@@ -87,10 +87,10 @@ error_state_kalman_filter:
             bias_gyro: 1.0e-4
         measurement:
             pose:
-                pos: 1.0e-4
-                ori: 1.0e-4
-            pos: 1.0e-4
-            vel: 2.5e-3
+                pos: 1.0e-4     # 1.0e-4 原始参数
+                ori: 1.0e-4     # 1.0e-4 原始参数
+            pos: 1.0e-4         # 1.0e-4 原始参数
+            vel: 2.5e-3         # 2.5e-3 原始参数
     motion_constraint: 
         activated: true
         w_b_thresh: 0.13

@@ -9,25 +9,25 @@
 #include "glog/logging.h"
 
 //静态成员变量必须在类外初始化
-double lidar_localization::GNSSData::origin_longitude = 8.39040283786;
-double lidar_localization::GNSSData::origin_latitude = 48.9825914868;
-double lidar_localization::GNSSData::origin_altitude = 116.388149261;
+// double lidar_localization::GNSSData::origin_longitude = 8.39040283786;
+// double lidar_localization::GNSSData::origin_latitude = 48.9825914868;
+// double lidar_localization::GNSSData::origin_altitude = 116.388149261;
 bool lidar_localization::GNSSData::origin_position_inited = false;
 GeographicLib::LocalCartesian lidar_localization::GNSSData::geo_converter;
 
 namespace lidar_localization {
 void GNSSData::InitOriginPosition() {
     // geo_converter.Reset(48.9825914868, 8.39040283786, 116.388149261);
-    geo_converter.Reset(31.1506838662669203, 121.1702651772312436, 4.3674535751342773);
+    geo_converter.Reset(31.1506836219693000, 121.1702651870648282, 4.3672881126403809);
 
     // origin_longitude = longitude;
     // origin_latitude = latitude; 
     // origin_altitude = altitude;
 
-    std::cout << "GNSS Data: " << std::endl;
-    std::cout << "Latitude: " << latitude << std::endl;
-    std::cout << "Longitude: " << longitude <<  std::endl;
-    std::cout << "Altitude: " << altitude << std::endl << std::endl;
+    std::cout << "GNSS Data fix origin position: " << std::endl;
+    // std::cout << "Latitude 1:  " << latitude << std::endl;
+    // std::cout << "Longitude 1: " << longitude <<  std::endl;
+    // std::cout << "Altitude 1: " << altitude << std::endl << std::endl;
 
     origin_position_inited = true;
 }

@@ -44,7 +44,7 @@ bool NDTRegistration::SetRegistrationParam(float res, float step_size, float tra
 
 bool NDTRegistration::SetInputTarget(const CloudData::CLOUD_PTR& input_target) {
     ndt_ptr_->setInputTarget(input_target);
-    LOG(INFO) << " SetInputTarget: target points size: " << input_target->points.size() << std::endl;
+    // LOG(INFO) << " SetInputTarget: target points size: " << input_target->points.size() << std::endl;
     return true;
 }
 

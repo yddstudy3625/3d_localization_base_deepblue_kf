@@ -19,7 +19,7 @@ KITTIFilteringFlow::KITTIFilteringFlow(ros::NodeHandle &nh) {
   // subscriber:
   // a. IMU raw measurement:
   imu_raw_sub_ptr_ =
-      std::make_shared<IMUSubscriber>(nh, "/kitti/oxts/imu/extract", 1000000);
+      std::make_shared<IMUSubscriber>(nh, "/imu/reframe_id", 1000000);
   // b. undistorted Velodyne measurement:
   cloud_sub_ptr_ =
       std::make_shared<CloudSubscriber>(nh, "/synced_cloud", 100000);
@@ -34,7 +34,7 @@ KITTIFilteringFlow::KITTIFilteringFlow(ros::NodeHandle &nh) {
       std::make_shared<OdometrySubscriber>(nh, "/synced_gnss", 100000);
   // f. lidar to imu tf:
   lidar_to_imu_ptr_ =
-      std::make_shared<TFListener>(nh, "/imu_link", "/velo_link");
+      std::make_shared<TFListener>(nh, "/imu_link", "/rslidar");
 
   // publisher:
   // a. global point cloud map:
@@ -77,11 +77,16 @@ bool KITTIFilteringFlow::Run() {
         InitLocalization();
       }
     } else {
+      //  LOG(INFO) << " S: loop " << std::endl;
+      //  LOG(INFO) << "  " << std::endl;
       // handle timestamp chaos in an more elegant way
       if (HasLidarData() && ValidLidarData()) {
+        //  LOG(INFO) << " S 00 -> lidar data valid ." << std::endl;
         if (HasIMUData()) {
+            // LOG(INFO) << " S 00 01 -> imu data valid ." << std::endl;
           while (HasIMUData() && ValidIMUData() &&
                  current_imu_raw_data_.time < current_cloud_data_.time) {
+            // LOG(INFO) << " S 00 22 -> next laser not arrive, use imu update pose ." << std::endl;
             UpdateLocalization();
           }
 
@@ -94,6 +99,7 @@ bool KITTIFilteringFlow::Run() {
       }
 
       if (HasIMUData() && ValidIMUData()) {
+        // LOG(INFO) << " S no lidar data, exist imu data " << std::endl;
         UpdateLocalization();
       }
     }
@@ -249,11 +255,20 @@ bool KITTIFilteringFlow::InitLocalization(void) {
   Eigen::Vector3f init_vel = current_pos_vel_data_.vel;
 
   // first try to init using scan context query:
-  if (filtering_ptr_->Init(current_cloud_data_, init_vel,
+  // if (filtering_ptr_->Init(current_cloud_data_, init_vel,
+  //                          current_imu_synced_data_)) {
+  //   // prompt:
+  //   LOG(INFO) << "Scan Context Localization Init Succeeded." << std::endl;
+  // }
+
+  // use gnss init pose
+  if (filtering_ptr_->Init( gnss_data_buff_.front().pose, init_vel,
                            current_imu_synced_data_)) {
     // prompt:
-    LOG(INFO) << "Scan Context Localization Init Succeeded." << std::endl;
+    LOG(INFO) << " gnss Localization start Init...... " << std::endl;
   }
+
+
 
   return true;
 }
