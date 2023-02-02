@@ -7,6 +7,7 @@
 #define LIDAR_LOCALIZATION_DATA_PRETREAT_DATA_PRETREAT_FLOW_HPP_
 
 #include <ros/ros.h>
+#include <yaml-cpp/yaml.h>
 // subscriber
 #include "lidar_localization/subscriber/cloud_subscriber.hpp"
 #include "lidar_localization/subscriber/imu_subscriber.hpp"

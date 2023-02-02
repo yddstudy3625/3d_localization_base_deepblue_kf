@@ -1,5 +1,9 @@
 <launch>
     <node pkg="rviz"  type="rviz"  name="rviz"  args="-d $(find lidar_localization)/rviz/filtering.rviz"></node>
-    <node pkg="lidar_localization"  type="data_pretreat_node"  name="data_pretreat_node"  output="screen"></node>
+    <node pkg="lidar_localization"  type="data_pretreat_node"    name="data_pretreat_node"    output="screen"></node>
+    <node pkg="lidar_localization"  type="vel_use_nowtime_node"  name="vel_use_nowtime_node"  output="screen"></node>
     <node pkg="lidar_localization"  type="kitti_filtering_node"  name="kitti_filtering_node"  output="screen"></node>
+    
+    <!--- State TF -->
+    <!-- <include file="$(find lidar_localization)/launch/static_tf_publisher.launch" /> -->
 </launch>

@@ -72,6 +72,10 @@ add_executable(data_pretreat_node src/apps/data_pretreat_node.cpp ${ALL_SRCS})
 add_dependencies(data_pretreat_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(data_pretreat_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
 
+add_executable(vel_use_nowtime_node src/apps/vel_use_nowtime_node.cpp ${ALL_SRCS})
+add_dependencies(vel_use_nowtime_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(vel_use_nowtime_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
+
 add_executable(kitti_filtering_node src/apps/kitti_filtering_node.cpp ${ALL_SRCS})
 add_dependencies(kitti_filtering_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(kitti_filtering_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBRARIES})
@@ -94,7 +98,7 @@ target_link_libraries(kitti_filtering_node ${catkin_LIBRARIES} ${ALL_TARGET_LIBR
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 install(TARGETS
         data_pretreat_node
-
+        vel_use_nowtime_node
         kitti_filtering_node
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

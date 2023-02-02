@@ -11,6 +11,24 @@
 namespace lidar_localization {
 Eigen::Matrix3f IMUData::GetOrientationMatrix() const {
     Eigen::Quaterniond q(orientation.w, orientation.x, orientation.y, orientation.z);
+
+    /********  ydd add， 199号车的包中的 imu 方向刚好跟之前 198号车中 imu 方向 差 180度 *******/
+    Eigen::Vector3d angular_delta = Eigen::Vector3d(0,0,3.1415926535897931);
+    double angular_delta_mag = angular_delta.norm();
+    // direction:
+    Eigen::Vector3d angular_delta_dir = angular_delta.normalized();
+
+    // build delta q: // use 罗德里戈公式 使用角轴的方式计算 等同的四元素乘法，四元素乘法等同于按照对应角轴的旋转
+    double angular_delta_cos = cos(angular_delta_mag / 2.0);  // theta/2
+    double angular_delta_sin = sin(angular_delta_mag / 2.0);  // theta/2
+    Eigen::Quaterniond dq(angular_delta_cos,
+                            angular_delta_sin * angular_delta_dir.x(),
+                            angular_delta_sin * angular_delta_dir.y(),
+                            angular_delta_sin * angular_delta_dir.z());
+    // update:
+    q = q * dq;
+    /////////////////////////////////
+
     return q.matrix().cast<float>();
 }
 

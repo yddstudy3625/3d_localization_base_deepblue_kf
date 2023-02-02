@@ -10,22 +10,34 @@
 
 namespace lidar_localization {
 DataPretreatFlow::DataPretreatFlow(ros::NodeHandle& nh, std::string cloud_topic) {
+    std::string config_file_path =
+      WORK_SPACE_PATH + "/config/pretreat/pretreat.yaml";
+
+    YAML::Node config_node = YAML::LoadFile(config_file_path);
+    std::string lidar_topic = config_node["lidarTopic"].as<std::string>();
+    std::string imu_topic = config_node["imuTopic"].as<std::string>();
+    std::string gps_topic = config_node["gpsTopic"].as<std::string>();
+    std::string vel_topic = config_node["velocityTopic"].as<std::string>();
+
+    std::string lidar_frame = config_node["lidarFrame"].as<std::string>();
+    std::string imu_frame = config_node["imuFrame"].as<std::string>();
+
     // subscribers:
     // a. velodyne measurement:
-    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, "/velodyne_points", 100000);
+    cloud_sub_ptr_ = std::make_shared<CloudSubscriber>(nh, lidar_topic, 100000);
     // b. OXTS IMU:
-    imu_sub_ptr_ = std::make_shared<IMUSubscriber>(nh, "/imu/reframe_id", 1000000);
+    imu_sub_ptr_ = std::make_shared<IMUSubscriber>(nh, imu_topic, 1000000);
     // c. OXTS velocity:
-    velocity_sub_ptr_ = std::make_shared<VelocitySubscriber>(nh, "/vel_use_now_time", 1000000);
+    velocity_sub_ptr_ = std::make_shared<VelocitySubscriber>(nh, vel_topic, 1000000);
     // d. OXTS GNSS:
-    gnss_sub_ptr_ = std::make_shared<GNSSSubscriber>(nh, "/fix_use_now_time", 1000000);
-    lidar_to_imu_ptr_ = std::make_shared<TFListener>(nh, "/imu_link", "/rslidar");
+    gnss_sub_ptr_ = std::make_shared<GNSSSubscriber>(nh, gps_topic, 1000000);
+    lidar_to_imu_ptr_ = std::make_shared<TFListener>(nh, imu_frame, lidar_frame);
 
     // publishers:
-    cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, cloud_topic, "/rslidar", 100);
-    imu_pub_ptr_ = std::make_shared<IMUPublisher>(nh, "/synced_imu", "/imu_link", 100);
-    pos_vel_pub_ptr_ = std::make_shared<PosVelPublisher>(nh, "/synced_pos_vel", "/map", "/imu_link", 100);
-    gnss_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "/synced_gnss", "/map", "/rslidar", 100);
+    cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, cloud_topic, lidar_frame, 100);
+    imu_pub_ptr_ = std::make_shared<IMUPublisher>(nh, "/synced_imu", imu_frame, 100);
+    pos_vel_pub_ptr_ = std::make_shared<PosVelPublisher>(nh, "/synced_pos_vel", "/map", imu_frame, 100);
+    gnss_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "/synced_gnss", "/map", lidar_frame, 100);
 
     // motion compensation for lidar measurement:
     distortion_adjust_ptr_ = std::make_shared<DistortionAdjust>();
@@ -35,16 +47,21 @@ bool DataPretreatFlow::Run() {
     if (!ReadData())
         return false;
 
-    if (!InitCalibration()) 
-        return false;
+    // if (!InitCalibration()) 
+    //     return false;
+
+    // LOG(INFO) << " Read S 22222222222222222 " << std::endl;
 
     if (!InitGNSS())
         return false;
 
+    // LOG(INFO) << " Read S 33333333333333333 --> cloud imu vel gnss size: " << cloud_data_buff_.size() << "," << imu_data_buff_.size() << "," << velocity_data_buff_.size() << "," << gnss_data_buff_.size() << std::endl;
+
     while(HasData()) {
+        //  LOG(INFO) << " Read S 444444444444444 " << std::endl;
         if (!ValidData())
             continue;
-
+        // LOG(INFO) << " Read S 55555555555555555555555555555555555 " << std::endl;
         TransformData();
         PublishData();
     }
@@ -63,6 +80,9 @@ bool DataPretreatFlow::ReadData() {
     velocity_sub_ptr_->ParseData(unsynced_velocity_);
     gnss_sub_ptr_->ParseData(unsynced_gnss_);
 
+    // LOG(INFO) << " Read laser->imu->vel->gnss size : " << cloud_data_buff_.size() << "," << unsynced_imu_.size() << ","
+    //     << unsynced_velocity_.size() << "," << unsynced_gnss_.size() << ","   << std::endl;
+
     if (cloud_data_buff_.size() == 0)
         return false;
 
@@ -79,12 +99,14 @@ bool DataPretreatFlow::ReadData() {
     static bool sensor_inited = false;
     if (!sensor_inited) {
         if (!valid_imu || !valid_velocity || !valid_gnss) {
+            LOG(INFO) << " valid_imu -> valid_velocity -> valid_gnss: " << valid_imu << "," << valid_velocity << "," << valid_gnss << std::endl;
             cloud_data_buff_.pop_front();
             return false;
         }
         sensor_inited = true;
     }
 
+    // LOG(INFO) << " Read endddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd " << std::endl;
     return true;
 }
 
@@ -171,11 +193,12 @@ bool DataPretreatFlow::TransformData() {
     current_gnss_data_.UpdateXYZ();
     gnss_pose_(0,3) = current_gnss_data_.local_E;
     gnss_pose_(1,3) = current_gnss_data_.local_N;
-    gnss_pose_(2,3) = current_gnss_data_.local_U;
+    // gnss_pose_(2,3) = current_gnss_data_.local_U;
+    gnss_pose_(2,3) = 4.36;
     // get orientation from IMU:
     gnss_pose_.block<3,3>(0,0) = current_imu_data_.GetOrientationMatrix();
     // this is lidar pose in GNSS/map frame:
-    gnss_pose_ *= lidar_to_imu_;
+    // gnss_pose_ *= lidar_to_imu_;
 
     // b. set synced pos vel
     pos_vel_.pos.x() = current_gnss_data_.local_E;
@@ -187,9 +210,9 @@ bool DataPretreatFlow::TransformData() {
     pos_vel_.vel.z() = current_velocity_data_.linear_velocity.z;
 
     // c. motion compensation for lidar measurements:
-    current_velocity_data_.TransformCoordinate(lidar_to_imu_);
-    distortion_adjust_ptr_->SetMotionInfo(0.1, current_velocity_data_);
-    distortion_adjust_ptr_->AdjustCloud(current_cloud_data_.cloud_ptr, current_cloud_data_.cloud_ptr);
+    // current_velocity_data_.TransformCoordinate(lidar_to_imu_);
+    // distortion_adjust_ptr_->SetMotionInfo(0.1, current_velocity_data_);
+    // distortion_adjust_ptr_->AdjustCloud(current_cloud_data_.cloud_ptr, current_cloud_data_.cloud_ptr);
 
     return true;
 }

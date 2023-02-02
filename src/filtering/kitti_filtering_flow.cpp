@@ -16,10 +16,22 @@
 namespace lidar_localization {
 
 KITTIFilteringFlow::KITTIFilteringFlow(ros::NodeHandle &nh) {
+  std::string config_file_path =
+    WORK_SPACE_PATH + "/config/pretreat/pretreat.yaml";
+
+  YAML::Node config_node = YAML::LoadFile(config_file_path);
+  std::string lidar_topic = config_node["lidarTopic"].as<std::string>();
+  std::string imu_topic = config_node["imuTopic"].as<std::string>();
+  std::string gps_topic = config_node["gpsTopic"].as<std::string>();
+  std::string vel_topic = config_node["velocityTopic"].as<std::string>();
+
+  std::string lidar_frame = config_node["lidarFrame"].as<std::string>();
+  std::string imu_frame = config_node["imuFrame"].as<std::string>();
+
   // subscriber:
   // a. IMU raw measurement:
   imu_raw_sub_ptr_ =
-      std::make_shared<IMUSubscriber>(nh, "/imu/reframe_id", 1000000);
+      std::make_shared<IMUSubscriber>(nh, imu_topic, 1000000);
   // b. undistorted Velodyne measurement:
   cloud_sub_ptr_ =
       std::make_shared<CloudSubscriber>(nh, "/synced_cloud", 100000);
@@ -34,7 +46,7 @@ KITTIFilteringFlow::KITTIFilteringFlow(ros::NodeHandle &nh) {
       std::make_shared<OdometrySubscriber>(nh, "/synced_gnss", 100000);
   // f. lidar to imu tf:
   lidar_to_imu_ptr_ =
-      std::make_shared<TFListener>(nh, "/imu_link", "/rslidar");
+      std::make_shared<TFListener>(nh, imu_frame, lidar_frame);
 
   // publisher:
   // a. global point cloud map:
@@ -60,18 +72,18 @@ KITTIFilteringFlow::KITTIFilteringFlow(ros::NodeHandle &nh) {
 }
 
 bool KITTIFilteringFlow::Run() {
-  if (!InitCalibration()) {
-    return false;
-  }
-
+  // if (!InitCalibration()) {
+  //   return false;
+  // }
   // if new global map is available, publish it:
   PublishGlobalMap();
   // if new local map is available, publish it:
   PublishLocalMap();
 
   ReadData();
-
+  // static int count = 0;
   while (HasData()) {
+    // count = 0;
     if (!HasInited()) {
       if (ValidLidarData()) {
         InitLocalization();
@@ -104,7 +116,7 @@ bool KITTIFilteringFlow::Run() {
       }
     }
   }
-
+  // LOG(INFO) << " S: count: " << count++ << std::endl;
   return true;
 }
 
@@ -178,6 +190,9 @@ bool KITTIFilteringFlow::ReadData() {
   pos_vel_sub_ptr_->ParseData(pos_vel_data_buff_);
   gnss_sub_ptr_->ParseData(gnss_data_buff_);
 
+  //  LOG(INFO) << " Read laser->imu->vel->gnss size : " << cloud_data_buff_.size() << "," << imu_synced_data_buff_.size() << ","
+  //  << pos_vel_data_buff_.size() << "," << gnss_data_buff_.size() << ","   << std::endl;
+
   return true;
 }
 
@@ -185,11 +200,14 @@ bool KITTIFilteringFlow::HasInited(void) { return filtering_ptr_->HasInited(); }
 
 bool KITTIFilteringFlow::HasData() {
   if (!HasInited()) {
+      //  LOG(INFO) << " HasInited is false: "  << std::endl;
     if (!HasLidarData()) {
+        // LOG(INFO) << " HasLidarData is false: "  << std::endl;
       return false;
     }
   } else {
     if (!HasIMUData() && !HasLidarData()) {
+      // LOG(INFO) << " HasIMUData: " << HasIMUData() << ", HasLidarData: " << HasLidarData() << std::endl;
       return false;
     }
   }
@@ -217,16 +235,19 @@ bool KITTIFilteringFlow::ValidLidarData() {
 
   if (diff_imu_time < -0.05 || diff_pos_vel_time < -0.05) {
     cloud_data_buff_.pop_front();
+    LOG(INFO) << " ValidLidarData: laser too front " << std::endl;
     return false;
   }
 
   if (diff_imu_time > 0.05) {
     imu_synced_data_buff_.pop_front();
+    LOG(INFO) << " ValidLidarData: imu too front " << std::endl;
     return false;
   }
 
   if (diff_pos_vel_time > 0.05) {
     pos_vel_data_buff_.pop_front();
+    LOG(INFO) << " ValidLidarData: vel too front " << std::endl;
     return false;
   }
 
@@ -283,9 +304,12 @@ bool KITTIFilteringFlow::UpdateLocalization() {
 }
 
 bool KITTIFilteringFlow::CorrectLocalization() {
+  double startTime = ros::Time::now().toSec();
   bool is_fusion_succeeded =
       filtering_ptr_->Correct(current_imu_synced_data_, current_cloud_data_,
                               current_pos_vel_data_, laser_pose_);
+  double endTime = ros::Time::now().toSec();
+  std::cout << " CorrectLocalization cost time: " << std::setprecision(6) << (endTime-startTime) << std::endl;
   PublishLidarOdom();
 
   if (is_fusion_succeeded) {

@@ -1,0 +1,38 @@
+##################  当前使用的配置 ####################
+# sub topic
+lidarTopic: "/rslidar_points"
+imuTopic: "/imu"
+gpsTopic: "/fix"
+velocityTopic: "/vel_use_now_time"
+
+# Frames
+lidarFrame: "/rslidar"
+imuFrame: "/imu_link"
+
+
+
+##################  适配高精车rosbag的配置 ####################
+# config fit to high precision car rosbag
+# sub topic
+# lidarTopic: "/velodyne_points"
+# imuTopic: "/imu/reframe_id"
+# gpsTopic: "/fix_use_now_time"
+# velocityTopic: "/vel_use_now_time"
+
+
+# # Frames
+# lidarFrame: "/rslidar"
+# imuFrame: "/imu_link"
+
+
+##################  适配运营车rosbag的配置 ####################
+# config fit to yunying car rosbag
+# sub topic
+# lidarTopic: "/rslidar_points"
+# imuTopic: "/imu"
+# gpsTopic: "/fix"
+# velocityTopic: "/vel_use_now_time"
+
+# # Frames
+# lidarFrame: "/rslidar"
+# imuFrame: "/imu_link"

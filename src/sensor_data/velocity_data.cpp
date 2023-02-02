@@ -3,6 +3,8 @@
  * @Author: Ren Qian
  * @Date: 2020-02-23 22:20:41
  */
+#include <iostream>
+#include <iomanip>
 #include "lidar_localization/sensor_data/velocity_data.hpp"
 
 #include "glog/logging.h"
@@ -12,25 +14,48 @@ bool VelocityData::SyncData(std::deque<VelocityData>& UnsyncedData, std::deque<V
     // 传感器数据按时间序列排列，在传感器数据中为同步的时间点找到合适的时间位置
     // 即找到与同步时间相邻的左右两个数据
     // 需要注意的是，如果左右相邻数据有一个离同步时间差值比较大，则说明数据有丢失，时间离得太远不适合做差值
+    // std::cout << " sync_time: " << std::setprecision(15) << sync_time << std::endl;
+    // LOG(INFO) << " UnsyncedData->size : F -> " << UnsyncedData.size() << std::endl;
+    // for (size_t i = 0; i < UnsyncedData.size(); i++)
+    // {
+    //     std::cout << std::setprecision(15) << UnsyncedData.at(i).time << ", ";
+    // }
+    // std::cout << " " << std::endl;
+    // std::cout << " " << std::endl;
+    // std::cout << " " << std::endl;
+
     while (UnsyncedData.size() >= 2) {
-        if (UnsyncedData.front().time > sync_time)
+        if (UnsyncedData.front().time > sync_time) {
+            LOG(INFO) << " all data time is large than sync_time" << std::endl;
             return false;
+        }
+        
         if (UnsyncedData.at(1).time < sync_time) {
             UnsyncedData.pop_front();
             continue;
         }
         if (sync_time - UnsyncedData.front().time > 0.2) {
+            LOG(INFO) << " time diff is large 11 " << std::endl;
             UnsyncedData.pop_front();
             return false;
         }
         if (UnsyncedData.at(1).time - sync_time > 0.2) {
+            LOG(INFO) << " time diff is large 22 " << std::endl;
             UnsyncedData.pop_front();
             return false;
         }
         break;
     }
-    if (UnsyncedData.size() < 2)
+   
+    if (UnsyncedData.size() < 2) {
+        // LOG(INFO) << " UnsyncedData->size: S -> " << UnsyncedData.size() << std::endl;
+        if(UnsyncedData.size()) {
+            SyncedData.push_back(UnsyncedData.at(0));
+            return true;
+        }
         return false;
+    }
+        
 
     VelocityData front_data = UnsyncedData.at(0);
     VelocityData back_data = UnsyncedData.at(1);
@@ -47,6 +72,8 @@ bool VelocityData::SyncData(std::deque<VelocityData>& UnsyncedData, std::deque<V
     synced_data.angular_velocity.z = front_data.angular_velocity.z * front_scale + back_data.angular_velocity.z * back_scale;
 
     SyncedData.push_back(synced_data);
+    // LOG(INFO) << " SyncedData->size: T -> " << SyncedData.size() << std::endl;
+
 
     return true;
 }

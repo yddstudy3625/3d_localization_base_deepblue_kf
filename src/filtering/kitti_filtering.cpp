@@ -82,7 +82,7 @@ bool KITTIFiltering::Correct(const IMUData &imu_data,
   CloudData::CLOUD_PTR filtered_cloud_ptr(new CloudData::CLOUD());
   current_scan_filter_ptr_->Filter(cloud_data.cloud_ptr, filtered_cloud_ptr);
 
-  LOG(INFO) << " Correct -> laser, filter size: " << (*cloud_data.cloud_ptr).points.size() << ", " << filtered_cloud_ptr->points.size() << std::endl;
+  // LOG(INFO) << " Correct -> laser, filter size: " << (*cloud_data.cloud_ptr).points.size() << ", " << filtered_cloud_ptr->points.size() << std::endl;
 
   if (!has_inited_) {
     predict_pose = current_gnss_pose_;

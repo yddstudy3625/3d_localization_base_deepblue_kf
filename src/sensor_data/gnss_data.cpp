@@ -18,7 +18,8 @@ GeographicLib::LocalCartesian lidar_localization::GNSSData::geo_converter;
 namespace lidar_localization {
 void GNSSData::InitOriginPosition() {
     // geo_converter.Reset(48.9825914868, 8.39040283786, 116.388149261);
-    geo_converter.Reset(31.1506836219693000, 121.1702651870648282, 4.3672881126403809);
+    geo_converter.Reset(31.1506836219693000, 121.1702651870648282, 4.3672881126403809); // 移动智地 高精度车数据
+    // geo_converter.Reset(30.913001017445331797, 118.30027226487733572, 17.135038375854492188); // 滨玉线
 
     // origin_longitude = longitude;
     // origin_latitude = latitude; 

@@ -6,7 +6,10 @@
 #ifndef LIDAR_LOCALIZATION_FILTERING_KITTI_FILTERING_FLOW_HPP_
 #define LIDAR_LOCALIZATION_FILTERING_KITTI_FILTERING_FLOW_HPP_
 
+#include <ostream>
 #include <ros/ros.h>
+#include <yaml-cpp/yaml.h>
+#include "glog/logging.h"
 
 // subscriber:
 // a. IMU:
@@ -56,6 +59,16 @@ private:
     return false;
   }
   bool HasLidarData(void) const {
+    // if(cloud_data_buff_.empty()) {
+    //   LOG(INFO) << " cloud_data_buff_ is empty " << std::endl;
+    // }
+    // if(imu_synced_data_buff_.empty()) {
+    //   LOG(INFO) << " imu_synced_data_buff_ is empty " << std::endl;
+    // }
+    // if(pos_vel_data_buff_.empty()) {
+    //   LOG(INFO) << " pos_vel_data_buff_ is empty " << std::endl;
+    // }
+    
     return (!cloud_data_buff_.empty() && !imu_synced_data_buff_.empty() &&
             !pos_vel_data_buff_.empty());
   }
